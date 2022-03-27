@@ -48,7 +48,7 @@ def get_post(id: int, response: Response):
 
 
 @app.post('/post')
-def test_post(post: Post):
+def create_post(post: Post):
     # create a post
     post_dict = post.dict()
     post_dict["id"] = randrange(0, 1000000)
