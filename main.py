@@ -1,3 +1,4 @@
+from random import randrange
 from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -5,11 +6,17 @@ from pydantic import BaseModel
 app = FastAPI()
 
 
-class Test(BaseModel):
-    name: str
+class Post(BaseModel):
+    title: str
     content: str
     published: bool = True
     report: Optional[int] = None
+
+
+posts = [
+    {"title": "Initial Post", "content": "Post Content", "id": 1},
+    {"title": "Initial Post Two", "content": "Post Content", "id": 2}
+]
 
 
 @app.get('/')
@@ -17,6 +24,14 @@ def health_check():
     return {"message": "API health check OK"}
 
 
-@app.post('/test')
-def test_post(test: Test):
-    return test.dict()
+@app.get('/post')
+def all_posts():
+    return {"posts": posts}
+
+
+@app.post('/post')
+def test_post(post: Post):
+    post_dict = post.dict()
+    post_dict["id"] = randrange(0, 1000000)
+    posts.append(post_dict)
+    return post.dict()
