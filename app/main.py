@@ -1,16 +1,23 @@
 from random import randrange
-from typing import Optional
 from fastapi import FastAPI, Response, status
 from pydantic import BaseModel
+import psycopg
+from psycopg.rows import dict_row
 
 app = FastAPI()
+
+try:
+    conn = psycopg.connect(
+        conninfo="dbname=fastapi_course_db user=shaman password=", row_factory=dict_row)
+    print("Connection Established")
+except Exception as error:
+    print(error)
 
 
 class Post(BaseModel):
     title: str
     content: str
     published: bool = True
-    report: Optional[int] = None
 
 
 posts = [
@@ -33,7 +40,8 @@ def health_check():
 
 @app.get('/post')
 def all_posts():
-    # get all posts
+    posts = conn.execute("""SELECT * FROM posts""").fetchall()
+    print(posts)
     return {"posts": posts}
 
 
