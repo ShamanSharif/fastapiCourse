@@ -44,7 +44,30 @@ def get_post(id: int, response: Response):
 
 @app.post('/post', status_code=status.HTTP_201_CREATED)
 def create_post(post: Post):
-    post = conn.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""",
-                        (post.title, post.content, post.published,)).fetchone()
+    post = conn.execute(
+        """INSERT INTO posts (title, content, published) 
+        VALUES (%s, %s, %s) RETURNING *""",
+        (post.title, post.content, post.published,)).fetchone()
+    conn.commit()
+    return {"data": post}
+
+
+@app.put('/post/{id}', status_code=status.HTTP_200_OK)
+def update_post(id: int, post: Post):
+    post = conn.execute(
+        """UPDATE posts SET title = %s, content = %s, published = %s 
+        WHERE id = %s RETURNING *""",
+        (post.title, post.content, post.published, str(id),)).fetchone()
+    conn.commit()
+    return {"data": post}
+
+
+@app.delete('/post/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int, response: Response):
+    post = conn.execute(
+        """DELETE FROM posts WHERE id = %s RETURNING *""", (str(id),)).fetchone()
+    if not post:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"data": f"Post with id {id} not found"}
     conn.commit()
     return {"data": post}
