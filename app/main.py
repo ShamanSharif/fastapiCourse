@@ -1,6 +1,5 @@
 from fastapi import FastAPI, status, Depends, Response
-from pydantic import BaseModel
-from . import models
+from . import models, schemas
 from .database import engine, get_db
 from sqlalchemy.orm import Session
 
@@ -14,12 +13,6 @@ app = FastAPI()
 #     print("Connection Established")
 # except Exception as error:
 #     print(error)
-
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
 
 
 @app.get('/')
@@ -37,7 +30,7 @@ def orm_health_check(db: Session = Depends(get_db)):
 def all_posts(db: Session = Depends(get_db)):
     # posts = conn.execute("""SELECT * FROM posts""").fetchall()
     posts = db.query(models.Post).all()
-    return {"posts": posts}
+    return posts
 
 
 @app.get('/post/{id}', status_code=status.HTTP_302_FOUND)
@@ -49,11 +42,11 @@ def get_post(id: int, response: Response, db: Session = Depends(get_db)):
     if not post:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"data": f"No Post Found For Id {id}", }
-    return {"data": post}
+    return post
 
 
-@app.post('/post', status_code=status.HTTP_201_CREATED)
-def create_post(post: Post, db: Session = Depends(get_db)):
+@app.post('/post', status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
+def create_post(post: schemas.CreatePost, db: Session = Depends(get_db)):
     # post = conn.execute(
     #     """INSERT INTO posts (title, content, published)
     #     VALUES (%s, %s, %s) RETURNING *""",
@@ -63,11 +56,11 @@ def create_post(post: Post, db: Session = Depends(get_db)):
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data": new_post}
+    return new_post
 
 
 @app.put('/post/{id}', status_code=status.HTTP_200_OK)
-def update_post(id: int, post: Post, response: Response, db: Session = Depends(get_db)):
+def update_post(id: int, post:  schemas.CreatePost, response: Response, db: Session = Depends(get_db)):
     # post = conn.execute(
     #     """UPDATE posts SET title = %s, content = %s, published = %s
     #     WHERE id = %s RETURNING *""",
@@ -84,7 +77,7 @@ def update_post(id: int, post: Post, response: Response, db: Session = Depends(g
     post_query.update(post.dict(), synchronize_session=False)
     db.commit()
 
-    return {"data": post_query.first()}
+    return post_query.first()
 
 
 @app.delete('/post/{id}', status_code=status.HTTP_204_NO_CONTENT)
