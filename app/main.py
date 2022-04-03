@@ -92,3 +92,17 @@ def delete_post(id: int, response: Response, db: Session = Depends(get_db)):
     post = post.delete(synchronize_session=False)
     db.commit()
     return {"message": f"Post Id {id} was successfully deleted"}
+
+
+@app.post('/user', status_code=status.HTTP_201_CREATED, response_model=schemas.User)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # post = conn.execute(
+    #     """INSERT INTO posts (title, content, published)
+    #     VALUES (%s, %s, %s) RETURNING *""",
+    #     (post.title, post.content, post.published,)).fetchone()
+    # conn.commit()
+    new_user = models.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
