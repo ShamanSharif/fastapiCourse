@@ -2,7 +2,9 @@ from fastapi import FastAPI, status, Depends, Response
 from . import models, schemas
 from .database import engine, get_db
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -96,11 +98,8 @@ def delete_post(id: int, response: Response, db: Session = Depends(get_db)):
 
 @app.post('/user', status_code=status.HTTP_201_CREATED, response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # post = conn.execute(
-    #     """INSERT INTO posts (title, content, published)
-    #     VALUES (%s, %s, %s) RETURNING *""",
-    #     (post.title, post.content, post.published,)).fetchone()
-    # conn.commit()
+    hashed_password = pwd_context.hash(user.password)
+    user.password = hashed_password
     new_user = models.User(**user.dict())
     db.add(new_user)
     db.commit()
